@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 @Getter
 public class Post {
+    @NotBlank(message = "slug обязателен")
     private String slug;
     @NotBlank(message = "Заголовок обязателен")
     private String title;
