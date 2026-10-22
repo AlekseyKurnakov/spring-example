@@ -1,7 +1,10 @@
 package io.hexlet.spring.controller.api;
 
 import io.hexlet.spring.model.Post;
+import io.hexlet.spring.repository.PostRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,18 +19,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/posts")
 public class PostsController {
 
-    private List<Post> posts = new ArrayList<Post>();
+    @Autowired
+    private PostRepository postRepository;
 
     @GetMapping // Список постов
-    public ResponseEntity<List<Post>> index(@RequestParam(defaultValue = "10") Integer limit) {
-        var result = posts.stream().limit(limit).toList();
+    public ResponseEntity<List<Post>> index(@RequestParam(defaultValue = "${app.page-size}") Integer limit) {
+
+        List<Post> posts = postRepository.findAll();
+        List<Post> result = posts.stream().limit(limit).toList();
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(posts.size()))
                 .header("X-Source", "memory")
@@ -36,35 +42,32 @@ public class PostsController {
 
     @PostMapping // Создание поста
     public ResponseEntity<Post> create(@Valid @RequestBody Post post) {
-        posts.add(post);
+        postRepository.save(post);
         var location = URI.create("/api/posts/" + post.getId());
         return ResponseEntity.created(location).body(post);
     }
 
     @GetMapping("/{id}") // Вывод поста
-    public ResponseEntity<Post> show(@PathVariable String id) {
-        var post = posts.stream().filter(p -> id.equals(p.getId())).findFirst();
+    public ResponseEntity<Post> show(@PathVariable Long id) {
+        Optional<Post> post = postRepository.findById(id);
         return ResponseEntity.of(post);
     }
 
     @PutMapping("/{id}") // Обновление поста
-    public Post update(@PathVariable String id, @Valid @RequestBody Post data) {
-        var post =
-                posts.stream()
-                        .filter(p -> id.equals(p.getId()))
-                        .findFirst()
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
+    public Post update(@PathVariable Long id, @Valid @RequestBody Post data) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         post.setTitle(data.getTitle());
         post.setContent(data.getContent());
+        postRepository.save(post);
 
         return post;
     }
 
     @DeleteMapping("/{id}") // Удаление поста
-    public ResponseEntity<Void> destroy(@PathVariable String id) {
-        posts.removeIf(p -> id.equals(p.getId()));
+    public ResponseEntity<Void> destroy(@PathVariable Long id) {
+        postRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

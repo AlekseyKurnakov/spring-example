@@ -1,7 +1,10 @@
 package io.hexlet.spring.controller.api;
 
 import io.hexlet.spring.model.User;
+import io.hexlet.spring.repository.UserRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
 public class UsersController {
 
-    private List<User> users = new ArrayList<User>();
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping // Список пользователей
-    public ResponseEntity<List<User>> index(@RequestParam(defaultValue = "10") Integer limit) {
-        var result = users.stream().limit(limit).toList();
+    public ResponseEntity<List<User>> index(@RequestParam(defaultValue = "${app.page-size}") Integer limit) {
+        List<User> users = userRepository.findAll();
+        List<User> result = users.stream().limit(limit).toList();
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(users.size()))
                 .header("X-Source", "memory")
@@ -36,35 +41,33 @@ public class UsersController {
 
     @PostMapping// Создание пользователя
     public ResponseEntity<User> create(@Valid @RequestBody User user) {
-        users.add(user);
+        userRepository.save(user);
         var location = URI.create("/api/users/" + user.getId());
         return ResponseEntity.created(location).body(user);
     }
 
     @GetMapping("/{id}") // Вывод пользователя
-    public ResponseEntity<User> show(@PathVariable String id) {
-        var user = users.stream().filter(p -> id.equals(p.getId())).findFirst();
+    public ResponseEntity<User> show(@PathVariable Long id) {
+        Optional<User> user = userRepository.findById(id);
         return ResponseEntity.of(user);
     }
 
     @PutMapping("/{id}") // Обновление пользователя
-    public User update(@PathVariable String id, @Valid @RequestBody User data) {
-        var user =
-                users.stream()
-                        .filter(u -> id.equals(u.getId()))
-                        .findFirst()
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    public User update(@PathVariable Long id, @Valid @RequestBody User data) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-
-        user.setName(data.getName());
-        user.setEmail(data.getEmail());
+        user.setFirstName(data.getFirstName());
+        user.setLastName(data.getLastName());
+        user.setBirthday(data.getBirthday());
+        userRepository.save(user);
 
         return user;
     }
 
     @DeleteMapping("/{id}") // Удаление пользователя
-    public ResponseEntity<Void> destroy(@PathVariable String id) {
-        users.removeIf(p -> id.equals(p.getId()));
+    public ResponseEntity<Void> destroy(@PathVariable Long id) {
+        userRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

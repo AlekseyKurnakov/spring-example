@@ -1,22 +1,36 @@
 package io.hexlet.spring.model;
 
 import java.time.LocalDateTime;
-import jakarta.validation.constraints.NotBlank;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
+@Entity
 public class Post {
-    @NotBlank(message = "id обязателен")
-    private String id;
-    @NotBlank(message = "Заголовок обязателен")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Column(nullable = false)
     private String title;
-    @NotBlank(message = "Текст поста обязателен")
+    @NotBlank
+    @Column(nullable = false)
     private String content;
+    @NotBlank
+    @Column(nullable = false)
     private String author;
     private LocalDateTime createdAt;
+    private boolean published;
 
     public Post() {
         createdAt = LocalDateTime.now();

@@ -1,0 +1,14 @@
+spring:
+jpa:
+  hibernate:
+    ddl-auto: update
+  show-sql: true
+
+logging:
+  pattern:
+    dateformat: "yyyy-MM-dd HH:mm:ss" # кастомный формат даты в логах
+
+app:
+  welcome-message: "Welcome to Spring blog!" # наше кастомное сообщение
+  admin-email: "kurnakov.a.v@mail.ru"
+  page-size: 10
